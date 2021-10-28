@@ -13,6 +13,7 @@ class StockPrice(object):
 		self.build_model()
 
 
+
 	# this function loads a model from a file
 	def load_model_from_file(self, path):
 		self.model = keras.models.load_model(path)
@@ -69,3 +70,95 @@ class StockPrice(object):
 		self.model.add(LSTM(20, input_shape=(self.steps, 1)))
 		self.model.add(Dense(1))
 		self.model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
+
+
+		# this function trains the current NN model
+	def train(self):
+		self.model.fit(self.trainX, self.trainY, epochs=self.epochs,
+			batch_size=self.batch_size)
+		self.model.save('./'+self.company_name+'_model-bs'+str(self.batch_size)+'-steps'+str(self.steps))
+
+	# this function evaluates the performance of the trained model on both the training and testing datasets
+	def evaluate(self):
+		# make predictions
+		trainPredict = self.model.predict(self.trainX)
+		testPredict = self.model.predict(self.testX)
+
+		# invert predictions and targets to unscaled
+		self.trainPredict = self.scaler.inverse_transform(trainPredict)
+		self.trainY = self.scaler.inverse_transform([self.trainY])
+		self.testPredict = self.scaler.inverse_transform(testPredict)
+		self.testY = self.scaler.inverse_transform([self.testY])
+
+		# calculate errors
+		self.trainRMSE = math.sqrt(mean_squared_error(self.trainY[0], self.trainPredict[:,0]))
+		self.trainMAPE = np.mean(np.abs((self.trainY[0] - self.trainPredict[:,0]) / self.trainY[0])) * 100
+		print 'Train Score: RMSE =', self.trainRMSE, ' MAPE =', self.trainMAPE
+		self.testRMSE = math.sqrt(mean_squared_error(self.testY[0], self.testPredict[:,0]))
+		self.testMAPE = np.mean(np.abs((self.testY[0] - self.testPredict[:,0]) / self.testY[0])) * 100
+		print 'Test Score: RMSE =', self.testRMSE, ' MAPE =', self.testMAPE
+
+	# this function plots the results
+	def plot_results(self):
+		import matplotlib.pyplot as plt
+		import matplotlib.dates as mdates
+		import datetime as dt
+
+		d = [dt.datetime.strptime(i, '%m/%d/%Y').date() for i in self.dates]
+
+		# shift predictions of training data for plotting
+		trainPredictPlot = np.empty_like(self.stock_prices)
+		trainPredictPlot[:, :] = np.nan
+		trainPredictPlot[self.steps:len(self.trainPredict)+self.steps, :] = self.trainPredict
+
+		# shift predictions of test data for plotting
+		testPredictPlot = np.empty_like(self.stock_prices)
+		testPredictPlot[:, :] = np.nan
+		testPredictPlot[len(self.trainPredict)+(self.steps*2)+1:len(self.stock_prices)-1, :] = self.testPredict
+
+		fig, ax = plt.subplots() # create a new figure with a default 111 subplot
+
+		from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+		from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+
+		plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%Y'))
+		plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+		ax.plot(d, self.scaler.inverse_transform(self.stock_prices), 'k', label='True')
+		ax.plot(d, trainPredictPlot, 'xkcd:royal blue', label='Training Prediction')
+		ax.plot(d, testPredictPlot, 'xkcd:cerulean', label='Testing Prediction')
+
+		legend = plt.legend(loc='upper left', shadow=False, fontsize='large')
+		plt.title('Goole Stock Price', fontsize=16)
+		plt.xlabel('Time', fontsize=14)
+		plt.ylabel('Value', fontsize=14)
+		plt.gcf().autofmt_xdate()
+
+		from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+		axins = zoomed_inset_axes(ax, 23.0, loc=4) # zoom-factor: 2.5, location: upper-left
+		axins.plot(d, self.scaler.inverse_transform(self.stock_prices), 'k', label='True')
+		axins.plot(d, trainPredictPlot, 'xkcd:royal blue', label='Training Prediction')
+		axins.plot(d, testPredictPlot, 'xkcd:cerulean', label='Testing Prediction')
+
+		x1 = dt.date(2015, 11, 14)
+		x2 = dt.date(2015, 12, 5)
+		axins.set_xlim(x1, x2)
+		axins.set_ylim(760, 785)
+
+		plt.yticks(visible=False)
+		plt.xticks(visible=False)
+
+		from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+		mark_inset(ax, axins, loc1=1, loc2=3, fc="none", ec="0.5")
+
+		plt.show()
+
+	# this function loads a model from a file
+	def load_model_from_file(self, path):
+		self.model = keras.models.load_model(path)
+
+	# this function saves the model to a file
+	def save_model_to_file(self):
+		from keras.utils import plot_model
+		plot_model(self.model, show_layer_names=False, to_file='model1-google.eps')
+
+
