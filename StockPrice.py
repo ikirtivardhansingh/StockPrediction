@@ -35,3 +35,37 @@ class StockPrice(object):
 
 		stock_prices = stock_prices.reshape(len(stock_prices), 1)
 		stock_prices = stock_prices[len(stock_prices)-cnt:]
+
+			# scale the values
+		self.scaler = MinMaxScaler(feature_range=(0, 1))
+		self.stock_prices = self.scaler.fit_transform(stock_prices)
+
+	# this function splits the data into training and testing datasets for cross validation
+	def create_subsets(self, tr_percentage=0.7):
+		# split data into training set and test set
+		l = len(self.stock_prices)
+
+		train_size = int(l * tr_percentage)
+		train = self.stock_prices[0:train_size, :]
+
+		test_size = l - train_size
+		test = self.stock_prices[train_size:l, :]
+
+		print 'Training set size = ', len(train)
+		print 'Testing set size = ', len(test)
+
+		# convert stock prices into time series dataset
+		trainX, self.trainY = create_dataset(train, self.steps)
+		testX, self.testY = create_dataset(test, self.steps)
+
+		# reshape input of the LSTM to be format [samples, time steps, features]
+		self.trainX = np.reshape(trainX, (trainX.shape[0], trainX.shape[1], 1))
+		self.testX = np.reshape(testX, (testX.shape[0], testX.shape[1], 1))
+
+	# this function designs the main NN structure to be trained
+	def build_model(self):
+		self.model = Sequential()
+		# Model M1
+		self.model.add(LSTM(20, input_shape=(self.steps, 1)))
+		self.model.add(Dense(1))
+		self.model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
