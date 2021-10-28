@@ -13,6 +13,7 @@ class StockPrice(object):
 		self.build_model()
 
 
+
 	# this function loads a model from a file
 	def load_model_from_file(self, path):
 		self.model = keras.models.load_model(path)
