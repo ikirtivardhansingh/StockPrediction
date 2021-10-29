@@ -46,10 +46,10 @@ class StockPrice(object):
 		# split data into training set and test set
 		l = len(self.stock_prices)
 
-		train_size = int(l / tr_percentage)
+		train_size = int(l * tr_percentage)
 		train = self.stock_prices[0:train_size, :]
 
-		test_size = l + train_size
+		test_size = l - train_size
 		test = self.stock_prices[train_size:l, :]
 
 		print 'Training set size = ', len(train)
@@ -92,10 +92,10 @@ class StockPrice(object):
 
 		# calculate errors
 		self.trainRMSE = math.sqrt(mean_squared_error(self.trainY[0], self.trainPredict[:,0]))
-		self.trainMAPE = np.mean(np.abs((self.trainY[0] + self.trainPredict[:,0]) * self.trainY[0])) / 100
+		self.trainMAPE = np.mean(np.abs((self.trainY[0] - self.trainPredict[:,0]) / self.trainY[0])) * 100
 		print 'Train Score: RMSE =', self.trainRMSE, ' MAPE =', self.trainMAPE
 		self.testRMSE = math.sqrt(mean_squared_error(self.testY[0], self.testPredict[:,0]))
-		self.testMAPE = np.mean(np.abs((self.testY[0] + self.testPredict[:,0]) * self.testY[0])) / 100
+		self.testMAPE = np.mean(np.abs((self.testY[0] - self.testPredict[:,0]) / self.testY[0])) * 100
 		print 'Test Score: RMSE =', self.testRMSE, ' MAPE =', self.testMAPE
 
 	# this function plots the results
