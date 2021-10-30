@@ -7,12 +7,11 @@ class StockPrice(object):
 		self.batch_size = bs
 		self.company_name = company_name
 		self.dropout = dr
-	self.load_data()
+
+
+		self.load_data()
 		self.create_subsets()
 		self.build_model()
-
-	
-
 
 	# this function loads a model from a file
 	def load_model_from_file(self, path):
