@@ -7,6 +7,9 @@ class StockPrice(object):
 		self.batch_size = bs
 		self.company_name = company_name
 		self.dropout = dr
+	self.load_data()
+		self.create_subsets()
+		self.build_model()
 
 	
 
